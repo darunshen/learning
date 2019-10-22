@@ -19,6 +19,11 @@ MediaPlay::MediaPlay(play_info* info) : info(info) {
     fprintf(stderr, "Could not find stream information\n");
     exit(1);
   }
+  int32_t ret = DecodeContextInit();
+  if (ret != 0) {
+    fprintf(stderr, "DecodeContextInit Failed\n");
+    exit(1);
+  }
 }
 MediaPlay::~MediaPlay() {
   avcodec_free_context(&video_dec_ctx);
@@ -65,14 +70,12 @@ int32_t MediaPlay::DecodeContextInit() {
 }
 int32_t MediaPlay::StartDecoding() {
   AVPacket pkt;
-  int32_t ret = DecodeContextInit();
+  int32_t ret;
   /* initialize packet, set data to NULL, let the demuxer fill it */
   av_init_packet(&pkt);
   pkt.data = NULL;
   pkt.size = 0;
-  if (ret != 0) {
-    return ret;
-  }
+
   printf("Demuxing video from file '%s'\n", this->info->video_info.uri.c_str());
   int32_t got_frame;
   while (av_read_frame(fmt_ctx, &pkt) >= 0) {

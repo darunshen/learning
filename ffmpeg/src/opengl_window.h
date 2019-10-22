@@ -14,5 +14,6 @@ class OpenglWindow {
 
  private:
   static void Display(void);
+  static void LoopFunctionPerFrame(int32_t value);
 };
 #endif  // FFMPEG_SRC_OPENGL_WINDOW_H_
