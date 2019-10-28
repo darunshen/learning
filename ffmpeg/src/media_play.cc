@@ -5,7 +5,8 @@
  */
 
 #include "media_play.h"
-
+#include <thread>
+using std::thread;
 MediaPlay::MediaPlay(play_info* info) : info(info) {
   /* open input file, and allocate format context */
   if (avformat_open_input(&fmt_ctx, info->video_info.uri.c_str(), NULL, NULL) <
@@ -69,6 +70,12 @@ int32_t MediaPlay::DecodeContextInit() {
   return ret;
 }
 int32_t MediaPlay::StartDecoding() {
+  thread one_thread = thread(&MediaPlay::Decoding, this);
+  one_thread.detach();
+  return 0;
+}
+
+int32_t MediaPlay::Decoding() {
   AVPacket pkt;
   int32_t ret;
   /* initialize packet, set data to NULL, let the demuxer fill it */
@@ -95,6 +102,7 @@ int32_t MediaPlay::StartDecoding() {
   do {
     DecodePacket(&got_frame, 1, pkt);
   } while (got_frame);
+  return 0;
 }
 int32_t MediaPlay::DecodePacket(int* got_frame, int cached, AVPacket pkt) {
   int ret = 0;

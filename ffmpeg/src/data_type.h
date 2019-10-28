@@ -34,5 +34,9 @@ struct play_info {
   list<uint8_t *> decoded_frame_buffer;  /**< 已解码buffer的双向列表 */
   mutex decoded_frame_buffer_mutex; /**< 已解码buffer的双向列表的锁 */
 };
+struct shader_files {
+  string frag_file_name;
+  string vert_file_name;
+};
 
 #endif  // FFMPEG_SRC_DATA_TYPE_H_

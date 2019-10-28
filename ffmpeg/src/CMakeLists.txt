@@ -6,3 +6,7 @@ pthread va-drm va va-x11 va m va Xv X11 Xext x265 x264 z lzma bz2 GL glut)
 ADD_EXECUTABLE(media_player ${PROJECT_SOURCE_DIR}/src/main.cc 
     ${PROJECT_SOURCE_DIR}/src/media_play.cc ${PROJECT_SOURCE_DIR}/src/opengl_window.cc)
 TARGET_LINK_LIBRARIES(media_player ${LIB_LIST} )
+file(COPY ${PROJECT_SOURCE_DIR}/src/scripts/opengl/Yuv420ToRgb.frag 
+    DESTINATION ${PROJECT_SOURCE_DIR}/build/src)
+file(COPY ${PROJECT_SOURCE_DIR}/src/scripts/opengl/Yuv420ToRgb.vert 
+    DESTINATION ${PROJECT_SOURCE_DIR}/build/src)

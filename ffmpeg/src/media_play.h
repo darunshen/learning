@@ -23,6 +23,7 @@ class MediaPlay {
   int32_t StartDecoding();
 
  private:
+  int32_t Decoding();
   int32_t DecodeContextInit();
   int32_t InitDecoderContext(int* stream_idx, AVCodecContext** dec_ctx,
                              AVFormatContext* fmt_ctx, enum AVMediaType type);
