@@ -12,6 +12,23 @@
 #include <vector>
 using std::ifstream;
 using std::stringstream;
+struct play_info* OpenglWindow::p_info_ = NULL;
+static struct shader_data {
+  GLuint uniform_location_yuv_y;
+  GLuint uniform_location_yuv_u;
+  GLuint uniform_location_yuv_v;
+  GLuint texture_target_yuv_y;
+  GLuint texture_target_yuv_u;
+  GLuint texture_target_yuv_v;
+  const GLuint vertex_layout_location = 0;
+  const GLuint texture_layout_location = 1;
+  const GLfloat vertex_coordinates[8] = {
+      -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f,
+  };
+  const GLfloat texture_coordinates[8] = {
+      0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+  };
+} shader_data_store;
 OpenglWindow::OpenglWindow(int argc, char* argv[], struct play_info* const info,
                            function<int32_t(void)> init_function) {
   if (0 != InitMaps()) {
@@ -19,12 +36,12 @@ OpenglWindow::OpenglWindow(int argc, char* argv[], struct play_info* const info,
     exit(1);
   }
 
-  this->p_info_ = info;
+  OpenglWindow::p_info_ = info;
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
   glutInitWindowPosition(info->pos_x, info->pos_y);
-  // glutInitWindowSize(info->width, info->height);
-  glutInitWindowSize(800, 600);
+  glutInitWindowSize(info->width, info->height);
+  // glutInitWindowSize(800, 600);
   glutCreateWindow(info->window_name.c_str());
 
   glLoadIdentity();
@@ -49,18 +66,78 @@ int32_t OpenglWindow::InitMaps() {
   pixel_format_shader_map_[AVPixelFormat::AV_PIX_FMT_YUV420P] = init_sf;
   return 0;
 }
-int32_t OpenglWindow::InitCoordinateAndTextureTarget() {}
+int32_t OpenglWindow::InitCoordinateAndTextureTarget() {
+  glVertexAttribPointer(shader_data_store.vertex_layout_location, 2, GL_FLOAT,
+                        0, 0, shader_data_store.vertex_coordinates);
+  glEnableVertexAttribArray(shader_data_store.vertex_layout_location);
+  glVertexAttribPointer(shader_data_store.texture_layout_location, 2, GL_FLOAT,
+                        0, 0, shader_data_store.texture_coordinates);
+  glEnableVertexAttribArray(shader_data_store.texture_layout_location);
+  glGenTextures(1, &shader_data_store.texture_target_yuv_y);
+  glBindTexture(GL_TEXTURE_2D, shader_data_store.texture_target_yuv_y);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+  glGenTextures(1, &shader_data_store.texture_target_yuv_u);
+  glBindTexture(GL_TEXTURE_2D, shader_data_store.texture_target_yuv_u);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+  glGenTextures(1, &shader_data_store.texture_target_yuv_v);
+  glBindTexture(GL_TEXTURE_2D, shader_data_store.texture_target_yuv_v);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+}
 void OpenglWindow::LoopFunctionPerFrame(int32_t value) {
   Display();
   glutTimerFunc(40, LoopFunctionPerFrame, 0);
 }
-void OpenglWindow::Display(void) {}
+void OpenglWindow::Display(void) {
+  if (p_info_ == NULL || p_info_->decoded_frame_buffer.size() == 0) {
+    return;
+  }
+  p_info_->decoded_frame_buffer_mutex.lock();
+  uint8_t* vedio_frame = p_info_->decoded_frame_buffer.front();
+  p_info_->decoded_frame_buffer.pop_front();
+  p_info_->decoded_frame_buffer_mutex.unlock();
+  glClearColor(0.0, 0, 0.0, 0.0);
+  glClear(GL_COLOR_BUFFER_BIT);
+
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, shader_data_store.texture_target_yuv_y);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, p_info_->width, p_info_->height, 0,
+               GL_RED, GL_UNSIGNED_BYTE, vedio_frame);
+  glUniform1i(shader_data_store.uniform_location_yuv_y, 0);
+
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D, shader_data_store.texture_target_yuv_u);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, p_info_->width / 2,
+               p_info_->height / 2, 0, GL_RED, GL_UNSIGNED_BYTE,
+               vedio_frame + p_info_->width * p_info_->height);
+  glUniform1i(shader_data_store.uniform_location_yuv_u, 1);
+
+  glActiveTexture(GL_TEXTURE2);
+  glBindTexture(GL_TEXTURE_2D, shader_data_store.texture_target_yuv_v);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, p_info_->width / 2,
+               p_info_->height / 2, 0, GL_RED, GL_UNSIGNED_BYTE,
+               vedio_frame + p_info_->width * p_info_->height * 5 / 4);
+  glUniform1i(shader_data_store.uniform_location_yuv_v, 2);
+  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+  glutSwapBuffers();
+  free(vedio_frame);
+}
 int32_t OpenglWindow::ReadFileToBuffer(const string file_name, string& buffer) {
   ifstream file_stream;
   stringstream string_stream;
   file_stream.open(file_name, ifstream::in);
   if (!file_stream.is_open()) {
-    std::cout << "Error opening file";
+    fprintf(stderr, "Error opening file!\n");
     return 1;
   }
   string_stream << file_stream.rdbuf();
@@ -89,7 +166,7 @@ int32_t OpenglWindow::InstallShaderWithProgram(
   if (GL_TRUE != success) {
     GLchar logs[512];
     glGetShaderInfoLog(vertex_shader, 512, NULL, logs);
-    std::cout << "vertex_shader glCompileShader failed:\n" << logs << std::endl;
+    fprintf(stderr, "vertex_shader glCompileShader failed:%s\n", logs);
     return 1;
   }
   glCompileShader(fragment_shader);
@@ -97,8 +174,7 @@ int32_t OpenglWindow::InstallShaderWithProgram(
   if (GL_TRUE != success) {
     GLchar logs[512];
     glGetShaderInfoLog(fragment_shader, 512, NULL, logs);
-    std::cout << "fragment_shader glCompileShader failed:\n"
-              << logs << std::endl;
+    fprintf(stderr, "fragment_shader glCompileShader failed:%s\n", logs);
     return 1;
   }
   // use program to link the shaders
@@ -110,12 +186,18 @@ int32_t OpenglWindow::InstallShaderWithProgram(
   if (GL_TRUE != success) {
     GLchar logs[512];
     glGetProgramInfoLog(program, 512, NULL, logs);
-    std::cout << "glLinkProgram failed\n" << logs << std::endl;
+    fprintf(stderr, "glLinkProgram failed:%s\n", logs);
     return 1;
   }
   // delete shader object which already linked to out program
   glDeleteShader(vertex_shader);
   glDeleteShader(fragment_shader);
   glUseProgram(program);
+  shader_data_store.uniform_location_yuv_y =
+      glGetUniformLocation(program, "yuv_y");
+  shader_data_store.uniform_location_yuv_u =
+      glGetUniformLocation(program, "yuv_u");
+  shader_data_store.uniform_location_yuv_v =
+      glGetUniformLocation(program, "yuv_v");
   return 0;
 }

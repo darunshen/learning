@@ -5,6 +5,9 @@
  */
 
 #include "media_play.h"
+#include <unistd.h>
+#include <fstream>
+#include <iostream>
 #include <thread>
 using std::thread;
 MediaPlay::MediaPlay(play_info* info) : info(info) {
@@ -105,6 +108,9 @@ int32_t MediaPlay::Decoding() {
   return 0;
 }
 int32_t MediaPlay::DecodePacket(int* got_frame, int cached, AVPacket pkt) {
+  if (this->info->decoded_frame_buffer.size() > 30) {
+    sleep(1);
+  }
   int ret = 0;
   int decoded = pkt.size;
   static int video_frame_count = 0;
@@ -152,8 +158,16 @@ int32_t MediaPlay::DecodePacket(int* got_frame, int cached, AVPacket pkt) {
       this->info->decoded_frame_buffer_mutex.lock();
       uint8_t* frame_buffer = reinterpret_cast<uint8_t*>(
           malloc(info->video_info.video_dst_bufsize * sizeof(uint8_t)));
+      memcpy(frame_buffer, this->info->video_info.video_dst_data[0],
+             info->video_info.video_dst_bufsize * sizeof(uint8_t));
       this->info->decoded_frame_buffer.push_back(frame_buffer);
       this->info->decoded_frame_buffer_mutex.unlock();
+      static int32_t s = 0;
+      std::ofstream out_file(string("test.dat") + std::to_string(s++),
+                             std::ios::out | std::ios::binary);
+      out_file.write(reinterpret_cast<char*>(frame_buffer),
+                     info->video_info.video_dst_bufsize * sizeof(uint8_t));
+      out_file.close();
     }
   }
   return decoded;

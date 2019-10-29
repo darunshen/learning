@@ -21,7 +21,7 @@ class OpenglWindow {
   int32_t InstallShaderWithProgram(const struct shader_files);
   static void Display(void);
   static void LoopFunctionPerFrame(int32_t value);
-  struct play_info *p_info_;
+  static struct play_info *p_info_;
   map<enum AVPixelFormat, struct shader_files> pixel_format_shader_map_;
 };
 #endif  // FFMPEG_SRC_OPENGL_WINDOW_H_
