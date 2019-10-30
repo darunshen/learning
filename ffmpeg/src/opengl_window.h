@@ -10,13 +10,43 @@ using std::function;
 using std::map;
 class OpenglWindow {
  public:
+  /**
+   * @brief Construct a new Opengl Window object
+   *
+   * @param argc
+   * @param argv
+   * @param info
+   * @param init_function this function will be called before glutMainLoop()
+   */
   OpenglWindow(int argc, char *argv[], struct play_info *const info,
                function<int32_t(void)> init_function);
 
  private:
+  /**
+   * @brief init map data for searching shader files with relative pixel format
+   *
+   * @return int32_t
+   */
   int32_t InitMaps();
+  /**
+   * @brief init opengl's coordinate and generator three texture target for yuv
+   *
+   * @return int32_t
+   */
   int32_t InitCoordinateAndTextureTarget();
+  /**
+   * @brief read shader file to buffer
+   *
+   * @param file_name
+   * @param buffer
+   * @return int32_t
+   */
   int32_t ReadFileToBuffer(const string file_name, string &buffer);
+  /**
+   * @brief install shader using opengl's program
+   *
+   * @return int32_t
+   */
   int32_t InstallShaderWithProgram(const struct shader_files);
   static void Display(void);
   static void LoopFunctionPerFrame(int32_t value);

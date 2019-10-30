@@ -33,13 +33,21 @@ struct play_info {
   list<uint8_t *> decoded_frame_buffer;  /**< 已解码buffer的双向列表 */
   mutex decoded_frame_buffer_mutex; /**< 已解码buffer的双向列表的锁 */
 };
+/**
+ * @brief 存储yuv通道数据
+ *
+ */
 struct yuv_channel_info {
   int32_t width, height;
   uint8_t *data;
 };
+/**
+ * @brief 存储shader文件名称
+ *
+ */
 struct shader_files {
-  string frag_file_name;
-  string vert_file_name;
+  string frag_file_name; /**< 片段着色器文件名 */
+  string vert_file_name; /**< 顶点着色器文件名 */
 };
 
 #endif  // FFMPEG_SRC_DATA_TYPE_H_

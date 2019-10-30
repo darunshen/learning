@@ -17,15 +17,54 @@ extern "C" {
 #endif
 class MediaPlay {
  public:
+  /**
+   * @brief Construct a new Media Play object,and init format context and decode
+   * context for the input info
+   *
+   * @param info
+   */
   MediaPlay(play_info* info);
   virtual ~MediaPlay();
+  /**
+   * @brief start decoding , this can be call outside this class
+   *
+   * @return int32_t
+   */
   int32_t StartDecoding();
 
  private:
+  /**
+   * @brief is call with a thread by StartDecoding
+   *
+   * @return int32_t
+   */
   int32_t Decoding();
+  /**
+   * @brief create context for decoding and alloc space for frame(for decoding)
+   * and image(yuv), called in MediaPlay(play_info* info)
+   *
+   * @return int32_t
+   */
   int32_t DecodeContextInit();
+  /**
+   * @brief create decode context and init it for corresponding codec id
+   *
+   * @param[in] stream_idx stream id
+   * @param[out] dec_ctx decode context
+   * @param[in] fmt_ctx format context
+   * @param[in] type stream type , must be video
+   * @return int32_t
+   */
   int32_t InitDecoderContext(int* stream_idx, AVCodecContext** dec_ctx,
                              AVFormatContext* fmt_ctx, enum AVMediaType type);
+  /**
+   * @brief decode one frame from one packet and push it back in queue
+   *
+   * @param[out] got_frame if decode one frame
+   * @param[in] cached if the frame in cache
+   * @param[in] pkt packet contains one frame
+   * @return int32_t
+   */
   int32_t DecodePacket(int* got_frame, int cached, AVPacket pkt);
   play_info* info;
   AVFormatContext* fmt_ctx = NULL;
