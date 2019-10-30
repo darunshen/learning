@@ -1,6 +1,5 @@
 /*
  * Created on Mon Oct 21 2019
- * Author : tianrun
  * Copyright (c) 2019
  */
 #ifndef FFMPEG_SRC_OPENGL_WINDOW_H_

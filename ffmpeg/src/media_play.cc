@@ -1,6 +1,5 @@
 /*
  * Created on Tue Oct 15 2019
- * Author : tianrun
  * Copyright (c) 2019
  */
 
@@ -162,12 +161,19 @@ int32_t MediaPlay::DecodePacket(int* got_frame, int cached, AVPacket pkt) {
              info->video_info.video_dst_bufsize * sizeof(uint8_t));
       this->info->decoded_frame_buffer.push_back(frame_buffer);
       this->info->decoded_frame_buffer_mutex.unlock();
+#ifdef TEST_DECODE
+      /**
+       * @brief generator raw video frame image , use " ffplay  -f rawvideo
+       * -video_size 1920x1080( or others ) src/test.dat[%d] " to check it.
+       *
+       */
       static int32_t s = 0;
       std::ofstream out_file(string("test.dat") + std::to_string(s++),
                              std::ios::out | std::ios::binary);
       out_file.write(reinterpret_cast<char*>(frame_buffer),
                      info->video_info.video_dst_bufsize * sizeof(uint8_t));
       out_file.close();
+#endif
     }
   }
   return decoded;

@@ -1,6 +1,5 @@
 /*
  * Created on Thu Oct 17 2019
- * Author : tianrun
  * Copyright (c) 2019
  */
 #include <GL/freeglut.h>

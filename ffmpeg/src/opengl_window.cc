@@ -1,6 +1,5 @@
 /*
  * Created on Mon Oct 21 2019
- * Author : tianrun
  * Copyright (c) 2019
  */
 #include "opengl_window.h"
@@ -10,6 +9,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include "utilty.hpp"
 using std::ifstream;
 using std::stringstream;
 struct play_info* OpenglWindow::p_info_ = NULL;
@@ -25,9 +25,8 @@ static struct shader_data {
   const GLfloat vertex_coordinates[8] = {
       -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f,
   };
-  const GLfloat texture_coordinates[8] = {
-      0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-  };
+  const GLfloat texture_coordinates[8] = {0.0f, 1.0f, 1.0f, 1.0f,
+                                          0.0f, 0.0f, 1.0f, 0.0f};
 } shader_data_store;
 OpenglWindow::OpenglWindow(int argc, char* argv[], struct play_info* const info,
                            function<int32_t(void)> init_function) {
@@ -48,9 +47,17 @@ OpenglWindow::OpenglWindow(int argc, char* argv[], struct play_info* const info,
   glClearColor(0.0, 0.0, 0.0, 0.0);
   glutDisplayFunc(Display);
   glutTimerFunc(40, LoopFunctionPerFrame, 0);
-  if (0 != InstallShaderWithProgram(
-               this->pixel_format_shader_map_.at(info->video_info.pix_fmt))) {
+  auto it = this->pixel_format_shader_map_.find(info->video_info.pix_fmt);
+  if (it == this->pixel_format_shader_map_.end()) {
+    fprintf(stderr, "pixel format not support!\n");
+    exit(1);
+  }
+  if (0 != InstallShaderWithProgram(it->second)) {
     fprintf(stderr, "InstallShaderWithProgram failed\n");
+    exit(1);
+  }
+  if (0 != InitCoordinateAndTextureTarget()) {
+    fprintf(stderr, "InitCoordinateAndTextureTarget failed\n");
     exit(1);
   }
   if (init_function() != 0) {
@@ -93,6 +100,7 @@ int32_t OpenglWindow::InitCoordinateAndTextureTarget() {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  return 0;
 }
 void OpenglWindow::LoopFunctionPerFrame(int32_t value) {
   Display();
@@ -106,31 +114,37 @@ void OpenglWindow::Display(void) {
   uint8_t* vedio_frame = p_info_->decoded_frame_buffer.front();
   p_info_->decoded_frame_buffer.pop_front();
   p_info_->decoded_frame_buffer_mutex.unlock();
-  glClearColor(0.0, 0, 0.0, 0.0);
+  glClearColor(0.0, 0.0, 0.0, 0.0);
   glClear(GL_COLOR_BUFFER_BIT);
-
+  yuv_channel_info yuv_data[3];
+  bool if_need_free = false;
+  YuvChannelDataGet(p_info_->video_info.pix_fmt, vedio_frame, p_info_->width,
+                    p_info_->height, yuv_data, &if_need_free);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, shader_data_store.texture_target_yuv_y);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, p_info_->width, p_info_->height, 0,
-               GL_RED, GL_UNSIGNED_BYTE, vedio_frame);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, yuv_data[0].width, yuv_data[0].height,
+               0, GL_RED, GL_UNSIGNED_BYTE, yuv_data[0].data);
   glUniform1i(shader_data_store.uniform_location_yuv_y, 0);
 
   glActiveTexture(GL_TEXTURE1);
   glBindTexture(GL_TEXTURE_2D, shader_data_store.texture_target_yuv_u);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, p_info_->width / 2,
-               p_info_->height / 2, 0, GL_RED, GL_UNSIGNED_BYTE,
-               vedio_frame + p_info_->width * p_info_->height);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, yuv_data[1].width, yuv_data[1].height,
+               0, GL_RED, GL_UNSIGNED_BYTE, yuv_data[1].data);
   glUniform1i(shader_data_store.uniform_location_yuv_u, 1);
 
   glActiveTexture(GL_TEXTURE2);
   glBindTexture(GL_TEXTURE_2D, shader_data_store.texture_target_yuv_v);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, p_info_->width / 2,
-               p_info_->height / 2, 0, GL_RED, GL_UNSIGNED_BYTE,
-               vedio_frame + p_info_->width * p_info_->height * 5 / 4);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, yuv_data[2].width, yuv_data[2].height,
+               0, GL_RED, GL_UNSIGNED_BYTE, yuv_data[2].data);
   glUniform1i(shader_data_store.uniform_location_yuv_v, 2);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
   glutSwapBuffers();
   free(vedio_frame);
+  if (if_need_free) {
+    free(yuv_data[2].data);
+    free(yuv_data[1].data);
+    free(yuv_data[0].data);
+  }
 }
 int32_t OpenglWindow::ReadFileToBuffer(const string file_name, string& buffer) {
   ifstream file_stream;
