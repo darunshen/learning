@@ -8,6 +8,10 @@
 #include "data_type.h"
 using std::function;
 using std::map;
+/**
+ * @brief provide window display and rendering feature
+ *
+ */
 class OpenglWindow {
  public:
   /**

@@ -116,10 +116,10 @@ void OpenglWindow::Display(void) {
   p_info_->decoded_frame_buffer_mutex.unlock();
   glClearColor(0.0, 0.0, 0.0, 0.0);
   glClear(GL_COLOR_BUFFER_BIT);
-  yuv_channel_info yuv_data[3];
+  yuv_panel_info yuv_data[3];
   bool if_need_free = false;
-  YuvChannelDataGet(p_info_->video_info.pix_fmt, vedio_frame, p_info_->width,
-                    p_info_->height, yuv_data, &if_need_free);
+  YuvPanelDataGet(p_info_->video_info.pix_fmt, vedio_frame, p_info_->width,
+                  p_info_->height, yuv_data, &if_need_free);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, shader_data_store.texture_target_yuv_y);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, yuv_data[0].width, yuv_data[0].height,

@@ -37,7 +37,7 @@ struct play_info {
  * @brief 存储yuv通道数据
  *
  */
-struct yuv_channel_info {
+struct yuv_panel_info {
   int32_t width, height;
   uint8_t *data;
 };

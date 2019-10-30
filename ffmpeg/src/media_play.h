@@ -15,6 +15,10 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
+/**
+ * @brief provide media stream process feature
+ *
+ */
 class MediaPlay {
  public:
   /**
