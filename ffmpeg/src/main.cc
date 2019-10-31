@@ -14,8 +14,7 @@ int main(int argc, char *argv[]) {
   trans_data.window_name = string("media_player");
   // trans_data.pos_x = 10;
   // trans_data.pos_y = 10;
-  trans_data.video_info.uri =
-      "/home/bigrain/Documents/code/my_project/learning/ffmpeg/build/55.mp4";
+  trans_data.video_info.uri = argv[1];
   MediaPlay mp(&trans_data);
   OpenglWindow ow(argc, argv, &trans_data, bind(&MediaPlay::StartDecoding, mp));
   return 0;
