@@ -8,6 +8,20 @@ this is a vedio player for linux , will convert pixel format from yuv to rgb in 
 
 1. yuv420
 
+## note
+
+1. need to compile libx264 and libx265 from source:  
+    git clone https://code.videolan.org/videolan/x264.git  
+    cd x264/  
+    ./configure --enable-shared  
+    make -j12&& sudo make install  
+  
+    hg clone http://hg.videolan.org/x265  
+    cd x265/build/linux  
+    sudo apt  install cmake-curses-gui  
+    ./make-Makefiles.bash  
+    make -j12 && sudo make install  
+
 ## building and using
 
 1. apt-get install (freeglut+....)
