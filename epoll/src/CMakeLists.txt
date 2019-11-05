@@ -1,0 +1,1 @@
+add_executable(little_server network/little_server.cc main.cc)

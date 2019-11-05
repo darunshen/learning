@@ -1,0 +1,16 @@
+build
+#### OS/IDE generated files
+.DS_Store
+.DS_Store?
+._*
+ehthumbs.db
+Thumbs.db
+.tags
+*.user
+*.user.*
+.vscode
+GPATH
+GRTAGS
+GTAGS
+.idea
+nohup.out
